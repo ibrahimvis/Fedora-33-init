@@ -1,0 +1,77 @@
+---
+
+- name: Initialization
+  hosts: localhost
+  tasks:
+    - name: 'Changing to Xorg'
+      replace:
+        path: /etc/gdm/custom.conf
+        regexp: '# WaylandEnable=false'
+        replace: 'WaylandEnable=false'
+        backup: yes
+
+    - name: 'Making Xorg the default display server'
+      lineinfile:
+        path: /etc/gdm/custom.conf
+        line: DefaultSession=gnome-xorg.desktop
+        insertafter: WaylandEnable=false
+    
+    - name: 'Adding multiple lines in dnf conf'
+      lineinfile:
+        path: /etc/dnf/dnf.conf
+        line: "{{ item }}"
+      loop:
+       - fastestmirror=1
+       - max_parallel_downloads=10
+       - deltarpm=true
+
+    - name: 'Set a hostname'
+      hostname:
+        name: ShadowMoses
+
+    - name: 'Enable FSTrim.timer'
+      service:
+        name: fstrim.timer
+        enabled: yes
+
+    - name: 'Add a watches to sysctl conf'
+      lineinfile:
+       line: fs.inotify.max_user_watches = 524288
+       path: /etc/sysctl.conf 
+
+
+    - name: 'Updating all the packages'
+      dnf:
+        name: "*"
+        state: latest
+
+
+    - name: 'Installing some packages'
+      dnf:
+        name:
+          - gnome-extensions-app
+          - gnome-tweaks
+          - gnome-shell-extension-appindicator
+          - rpmfusion-free-release-tainted
+          - dnf-plugins-core
+          - snapd
+          - dnf-utils
+          - git
+          - texlive-scheme-full
+          - texstudio
+          - curl
+          - cabextract
+          - xorg-x11-font-utils
+          - fontconfig
+          - vlc
+          - 'https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-33.noarch.rpm'
+          - 'https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-33.noarch.rpm'
+          - rpmfusion-free-release-tainted
+          - dnf-plugins-core
+        state: present
+
+    - name: Create a soft link for snapd
+      file:
+        src: /var/lib/snapd/snap
+        dest: /snap
+        state: link
